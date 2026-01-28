@@ -5,7 +5,7 @@ This project is a template designed to easily deploy and use an image editing wo
 
 [![Runpod](https://api.runpod.io/badge/wlsdml1114/qwen_image_edit)](https://console.runpod.io/hub/wlsdml1114/qwen_image_edit)
 
-The template performs prompt-guided image editing using ComfyUI workflows. It supports one or two input images and accepts inputs as path, URL, or Base64.
+The template performs prompt-guided image editing using ComfyUI workflows. It supports one, two, or three input images and accepts inputs as path, URL, or Base64.
 
 ## 🎨 Engui Studio Integration
 
@@ -24,7 +24,7 @@ This Qwen Image Edit template is primarily designed for **Engui Studio**, a comp
 ## ✨ Key Features
 
 *   **Prompt-Guided Image Editing**: Edit images based on a text prompt.
-*   **One or Two Input Images**: Automatically selects single- or dual-image workflow.
+*   **One, Two, or Three Input Images**: Automatically selects the workflow by the number of images (1/2/3).
 *   **Flexible Inputs**: Provide images via file path, URL, or Base64 string.
 *   **Customizable Parameters**: Control seed, width, height, and prompt.
 *   **ComfyUI Integration**: Built on top of ComfyUI for flexible workflow management.
@@ -36,7 +36,7 @@ This template includes all the necessary components to run Qwen Image Edit as a 
 *   **Dockerfile**: Configures the environment and installs all dependencies required for model execution.
 *   **handler.py**: Implements the handler function that processes requests for RunPod Serverless.
 *   **entrypoint.sh**: Performs initialization tasks when the worker starts.
-*   **qwen_image_edit_1.json / qwen_image_edit_2.json**: ComfyUI workflows for single- or dual-image editing.
+*   **qwen_image_edit_1_1image.json / qwen_image_edit_1_2image.json / qwen_image_edit_1_3image.json**: ComfyUI workflows for 1-, 2-, or 3-image editing.
 
 ### Input
 
@@ -46,14 +46,15 @@ The `input` object must contain the following fields. Image inputs support **URL
 | --- | --- | --- | --- | --- |
 | `prompt` | `string` | **Yes** | `N/A` | Text prompt that guides the edit. |
 | `image_path` or `image_url` or `image_base64` | `string` | **Yes** | `N/A` | First image input (path/URL/Base64). |
-| `image_path_2` or `image_url_2` or `image_base64_2` | `string` | No | `N/A` | Optional second image input (path/URL/Base64). Enables dual-image workflow. |
+| `image_path_2` or `image_url_2` or `image_base64_2` | `string` | No | `N/A` | Optional second image input (path/URL/Base64). |
+| `image_path_3` or `image_url_3` or `image_base64_3` | `string` | No | `N/A` | Optional third image input (path/URL/Base64). |
 | `seed` | `integer` | **Yes** | `N/A` | Random seed for deterministic output. |
 | `width` | `integer` | **Yes** | `N/A` | Output image width in pixels. |
 | `height` | `integer` | **Yes** | `N/A` | Output image height in pixels. |
 
 Notes:
 - Guidance is not used by the current handler.
-- If any of the `*_2` fields are provided, the dual-image workflow is selected automatically.
+- The workflow is selected automatically by the number of images provided (1, 2, or 3).
 
 **Request Example (single image via URL):**
 
@@ -106,13 +107,13 @@ If the job is successful, it returns a JSON object with the generated image Base
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `image` | `string` | Base64 encoded image file data. |
+| `image` | `string` | Base64-encoded image data (raw base64 string, no `data:...` prefix). |
 
 **Success Response Example:**
 
 ```json
 {
-  "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+  "image": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
 }
 ```
 
@@ -137,6 +138,20 @@ If the job fails, it returns a JSON object containing an error message.
 1.  Create a Serverless Endpoint on RunPod based on this repository.
 2.  Once the build is complete and the endpoint is active, submit jobs via HTTP POST requests according to the API Reference above.
 
+### API test script
+
+From the project root, you can run the API test script (uses RunPod `/runsync`). Set `runpod_API_KEY` and `qwen_image_edit` (endpoint ID) in the project root `test.env`, or export them.
+
+```bash
+# Using test.env (at project root)
+python qwen_edit/test_api.py --image-url "https://example.com/your-image.jpg" --out qwen_edit/out.png
+
+# Using a JSON input file
+python qwen_edit/test_api.py --json qwen_edit/example_request.json --out qwen_edit/out.png
+```
+
+Optional: `TEST_IMAGE_URL` in `test.env` can be used instead of `--image-url`. See `qwen_edit/.env.example` for a template without personal data.
+
 ### 📁 Using Network Volumes
 
 Instead of directly transmitting Base64 encoded files, you can use RunPod's Network Volumes to handle large files. This is especially useful when dealing with large image files.
@@ -145,12 +160,23 @@ Instead of directly transmitting Base64 encoded files, you can use RunPod's Netw
 2.  **Upload Files**: Upload the image files you want to use to the created Network Volume.
 3.  **Specify Paths**: When making an API request, specify the file paths within the Network Volume for `image_path` or `image_path_2`. For example, if the volume is mounted at `/my_volume` and you use `reference.jpg`, the path would be `"/my_volume/reference.jpg"`.
 
+### Example request files
+
+Example request bodies (no personal data) are provided for copy-paste or use with `test_api.py --json`:
+
+*   **example_request.json**: Single image via URL
+*   **example_request_2images.json**: Two images (path + URL)
+*   **example_request_3images.json**: Three images via URL
+
+Copy `.env.example` to set `runpod_API_KEY` and `qwen_image_edit` for local testing.
+
 ## 🔧 Workflow Configuration
 
 This template includes the following workflow configurations:
 
-*   **qwen_image_edit_1.json**: Single-image editing workflow
-*   **qwen_image_edit_2.json**: Dual-image editing workflow
+*   **qwen_image_edit_1_1image.json**: Single-image editing workflow
+*   **qwen_image_edit_1_2image.json**: Two-image editing workflow
+*   **qwen_image_edit_1_3image.json**: Three-image editing workflow
 
 The workflows are based on ComfyUI and include necessary nodes for prompt-guided image editing and output processing.
 

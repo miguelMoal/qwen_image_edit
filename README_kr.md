@@ -5,7 +5,7 @@
 
 [![Runpod](https://api.runpod.io/badge/wlsdml1114/qwen_image_edit)](https://console.runpod.io/hub/wlsdml1114/qwen_image_edit)
 
-이 템플릿은 프롬프트 기반의 이미지 편집을 수행하며, 1장 또는 2장의 입력 이미지를 지원하고 경로/URL/Base64 방식의 입력을 받을 수 있습니다.
+이 템플릿은 프롬프트 기반의 이미지 편집을 수행하며, 1장·2장·3장의 입력 이미지를 지원하고 경로/URL/Base64 방식의 입력을 받을 수 있습니다.
 
 ## 🎨 Engui Studio 통합
 
@@ -24,7 +24,7 @@
 ## ✨ 주요 기능
 
 *   **프롬프트 기반 이미지 편집**: 텍스트 프롬프트로 편집을 유도합니다.
-*   **단일/이중 이미지 입력**: 입력 이미지 수에 따라 워크플로우가 자동 선택됩니다.
+*   **1/2/3장 이미지 입력**: 입력 이미지 개수에 따라 1/2/3 이미지용 워크플로우가 자동 선택됩니다.
 *   **유연한 입력 방식**: 경로, URL, Base64 문자열 입력을 지원합니다.
 *   **사용자 정의 가능한 매개변수**: 시드, 너비, 높이, 프롬프트를 제어합니다.
 *   **ComfyUI 통합**: 유연한 워크플로우 관리를 위해 ComfyUI 위에 구축되었습니다.
@@ -36,7 +36,7 @@
 *   **Dockerfile**: 모델 실행에 필요한 환경을 구성하고 모든 의존성을 설치합니다.
 *   **handler.py**: RunPod Serverless용 요청을 처리하는 핸들러 함수를 구현합니다.
 *   **entrypoint.sh**: Worker가 시작될 때 초기화 작업을 수행합니다.
-*   **qwen_image_edit_1.json / qwen_image_edit_2.json**: 단일/이중 이미지 편집용 ComfyUI 워크플로우입니다.
+*   **qwen_image_edit_1_1image.json / qwen_image_edit_1_2image.json / qwen_image_edit_1_3image.json**: 1/2/3장 이미지 편집용 ComfyUI 워크플로우입니다.
 
 ### 입력
 
@@ -46,14 +46,15 @@
 | --- | --- | --- | --- | --- |
 | `prompt` | `string` | **예** | `N/A` | 편집을 유도하는 텍스트 프롬프트입니다. |
 | `image_path` 또는 `image_url` 또는 `image_base64` | `string` | **예** | `N/A` | 첫 번째 이미지 입력 (경로/URL/Base64). |
-| `image_path_2` 또는 `image_url_2` 또는 `image_base64_2` | `string` | 아니오 | `N/A` | 선택적 두 번째 이미지 입력 (경로/URL/Base64). 제공 시 이중 이미지 워크플로우 사용. |
+| `image_path_2` 또는 `image_url_2` 또는 `image_base64_2` | `string` | 아니오 | `N/A` | 선택적 두 번째 이미지 입력 (경로/URL/Base64). |
+| `image_path_3` 또는 `image_url_3` 또는 `image_base64_3` | `string` | 아니오 | `N/A` | 선택적 세 번째 이미지 입력 (경로/URL/Base64). |
 | `seed` | `integer` | **예** | `N/A` | 동일 결과 재현을 위한 랜덤 시드. |
 | `width` | `integer` | **예** | `N/A` | 출력 이미지의 너비(픽셀). |
 | `height` | `integer` | **예** | `N/A` | 출력 이미지의 높이(픽셀). |
 
 참고:
 - 현재 핸들러는 guidance 매개변수를 사용하지 않습니다.
-- `*_2` 필드 중 하나라도 제공되면 자동으로 이중 이미지 워크플로우가 선택됩니다.
+- 제공한 이미지 개수(1/2/3)에 따라 워크플로우가 자동 선택됩니다.
 
 **요청 예시 (단일 이미지, URL):**
 
@@ -106,13 +107,13 @@
 
 | 매개변수 | 타입 | 설명 |
 | --- | --- | --- |
-| `image` | `string` | Base64로 인코딩된 이미지 파일 데이터입니다. |
+| `image` | `string` | Base64로 인코딩된 이미지 데이터 (raw base64 문자열, `data:...` 접두사 없음). |
 
 **성공 응답 예시:**
 
 ```json
 {
-  "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+  "image": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
 }
 ```
 
@@ -137,6 +138,20 @@
 1.  이 저장소를 기반으로 RunPod에서 Serverless Endpoint를 생성합니다.
 2.  빌드가 완료되고 엔드포인트가 활성화되면 위 API 스펙에 따라 HTTP POST 요청을 통해 작업을 제출합니다.
 
+### API 테스트 스크립트
+
+프로젝트 루트에서 API 테스트 스크립트를 실행할 수 있습니다 (RunPod `/runsync` 사용). 프로젝트 루트의 `test.env`에 `runpod_API_KEY`와 `qwen_image_edit`(엔드포인트 ID)를 넣거나, 환경변수로 export 하세요.
+
+```bash
+# test.env 사용 시 (프로젝트 루트에 test.env)
+python qwen_edit/test_api.py --image-url "https://example.com/your-image.jpg" --out qwen_edit/out.png
+
+# JSON 입력 파일 사용
+python qwen_edit/test_api.py --json qwen_edit/example_request.json --out qwen_edit/out.png
+```
+
+선택: `test.env`에 `TEST_IMAGE_URL`을 넣으면 `--image-url` 대신 사용됩니다. 개인정보 없이 쓰는 예시는 `qwen_edit/.env.example`을 참고하세요.
+
 ### 📁 네트워크 볼륨 사용
 
 Base64로 인코딩된 파일을 직접 전송하는 대신 RunPod의 Network Volumes를 사용하여 대용량 파일을 처리할 수 있습니다. 이는 특히 대용량 이미지 파일을 다룰 때 유용합니다.
@@ -145,12 +160,23 @@ Base64로 인코딩된 파일을 직접 전송하는 대신 RunPod의 Network Vo
 2.  **파일 업로드**: 사용하려는 이미지 파일을 생성된 Network Volume에 업로드합니다.
 3.  **경로 지정**: API 요청 시 Network Volume 내의 파일 경로를 `image_path` 또는 `image_path_2`에 지정합니다. 예: 볼륨이 `/my_volume`에 마운트되고 `reference.jpg`를 사용하는 경우 경로는 `"/my_volume/reference.jpg"`입니다.
 
+### 예제 요청 파일
+
+개인정보 없이 사용할 수 있는 예제 요청 본문이 제공됩니다. 복사해서 쓰거나 `test_api.py --json`과 함께 사용하세요.
+
+*   **example_request.json**: 단일 이미지 (URL)
+*   **example_request_2images.json**: 두 이미지 (경로 + URL)
+*   **example_request_3images.json**: 세 이미지 (URL)
+
+로컬 테스트 시 `.env.example`을 복사해 `runpod_API_KEY`, `qwen_image_edit` 등을 설정하세요.
+
 ## 🔧 워크플로우 구성
 
 이 템플릿은 다음 워크플로우 구성을 포함합니다:
 
-*   **qwen_image_edit_1.json**: 단일 이미지 편집 워크플로우
-*   **qwen_image_edit_2.json**: 이중 이미지 편집 워크플로우
+*   **qwen_image_edit_1_1image.json**: 단일 이미지 편집 워크플로우
+*   **qwen_image_edit_1_2image.json**: 두 이미지 편집 워크플로우
+*   **qwen_image_edit_1_3image.json**: 세 이미지 편집 워크플로우
 
 워크플로우는 ComfyUI를 기반으로 하며 프롬프트 기반 이미지 편집 및 출력 처리를 위한 필요한 노드를 포함합니다.
 
