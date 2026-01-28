@@ -124,7 +124,10 @@ def main():
     parser = argparse.ArgumentParser(description="Qwen Image Edit API 테스트")
     parser.add_argument("--json", "-j", help="입력 JSON 파일 경로 (input 객체만 있는 파일 또는 전체 { \"input\": {...} })")
     parser.add_argument("--image-url", help="테스트용 이미지 URL (단일 이미지)")
-    parser.add_argument("--image-file", default=str(Path(__file__).resolve().parent / "examples" / "test_input.png"), help="테스트용 로컬 이미지 파일 경로 (기본: qwen_edit/examples/test_input.png)")
+    _examples_dir = Path(__file__).resolve().parent / "examples"
+    _default_input = _examples_dir / "input" / "test_input.png"
+    _default_out_dir = _examples_dir / "output"
+    parser.add_argument("--image-file", default=str(_default_input), help="테스트용 로컬 이미지 파일 경로 (기본: qwen_edit/examples/input/test_input.png)")
     parser.add_argument("--mode", choices=["url", "base64", "s3"], default="url", help="입력 방식: url | base64 | s3")
     parser.add_argument("--all", action="store_true", help="로컬 test_input.png로 base64 + s3 두 가지를 순차 테스트")
     parser.add_argument("--prompt", default="add watercolor style, soft pastel tones", help="편집 프롬프트")
@@ -132,8 +135,11 @@ def main():
     parser.add_argument("--width", type=int, default=768, help="너비")
     parser.add_argument("--height", type=int, default=1024, help="높이")
     parser.add_argument("--timeout", type=int, default=300, help="대기 초 (기본 300)")
-    parser.add_argument("--out", "-o", help="응답 이미지 저장 경로 (base64 디코딩)")
+    parser.add_argument("--out", "-o", help="응답 이미지 저장 경로 (미지정 시 examples/output/out_test.png 등)")
     args = parser.parse_args()
+    # 기본 출력 경로: examples/output/
+    if args.out is None:
+        args.out = str(_default_out_dir / "out_test.png")
 
     api_key, endpoint_id = get_config()
     if not api_key or not endpoint_id:
@@ -180,7 +186,9 @@ def main():
                 print("image 필드 있음, 길이:", len(img_b64) if isinstance(img_b64, str) else "N/A")
                 if out_path and img_b64:
                     raw = base64.b64decode(img_b64)
-                    Path(out_path).write_bytes(raw)
+                    out_p = Path(out_path)
+                    out_p.parent.mkdir(parents=True, exist_ok=True)
+                    out_p.write_bytes(raw)
                     print("저장됨:", out_path)
                 return True
             print("Output (일부):", json.dumps(output, indent=2, ensure_ascii=False)[:1200])

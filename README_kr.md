@@ -142,12 +142,23 @@
 
 프로젝트 루트에서 API 테스트 스크립트를 실행할 수 있습니다 (RunPod `/runsync` 사용). 프로젝트 루트의 `test.env`에 `runpod_API_KEY`와 `qwen_image_edit`(엔드포인트 ID)를 넣거나, 환경변수로 export 하세요.
 
+입력 이미지: `qwen_edit/examples/input/test_input.png`. 결과물은 기본값으로 `qwen_edit/examples/output/`에 저장됩니다 (`--out`으로 변경 가능).
+
 ```bash
-# test.env 사용 시 (프로젝트 루트에 test.env)
-python qwen_edit/test_api.py --image-url "https://example.com/your-image.jpg" --out qwen_edit/out.png
+# 권장: 로컬 예제 이미지 사용 (외부 URL 429 등 차단/레이트리밋 회피)
+python qwen_edit/test_api.py --mode base64
+
+# S3(Network Volume) 업로드 + image_path 테스트 (boto3 필요: pip install boto3)
+python qwen_edit/test_api.py --mode s3
+
+# base64 + S3 두 가지를 순차 테스트 → examples/output/out_test.png, out_test_s3.png
+python qwen_edit/test_api.py --all
 
 # JSON 입력 파일 사용
-python qwen_edit/test_api.py --json qwen_edit/example_request.json --out qwen_edit/out.png
+python qwen_edit/test_api.py --json qwen_edit/example_request.json
+
+# (선택) URL 모드 (호스트가 자동 다운로드를 막으면 실패할 수 있음)
+python qwen_edit/test_api.py --mode url --image-url "https://example.com/your-image.jpg"
 ```
 
 선택: `test.env`에 `TEST_IMAGE_URL`을 넣으면 `--image-url` 대신 사용됩니다. 개인정보 없이 쓰는 예시는 `qwen_edit/.env.example`을 참고하세요.

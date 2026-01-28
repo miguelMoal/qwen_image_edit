@@ -142,12 +142,23 @@ If the job fails, it returns a JSON object containing an error message.
 
 From the project root, you can run the API test script (uses RunPod `/runsync`). Set `runpod_API_KEY` and `qwen_image_edit` (endpoint ID) in the project root `test.env`, or export them.
 
+Input image: `qwen_edit/examples/input/test_input.png`. Outputs are written to `qwen_edit/examples/output/` by default (use `--out` to override).
+
 ```bash
-# Using test.env (at project root)
-python qwen_edit/test_api.py --image-url "https://example.com/your-image.jpg" --out qwen_edit/out.png
+# Recommended: use local example image (avoids external URL rate limits like HTTP 429)
+python qwen_edit/test_api.py --mode base64
+
+# S3(Network Volume) upload + image_path test (requires boto3: pip install boto3)
+python qwen_edit/test_api.py --mode s3
+
+# Run both base64 + S3 tests sequentially → examples/output/out_test.png, out_test_s3.png
+python qwen_edit/test_api.py --all
 
 # Using a JSON input file
-python qwen_edit/test_api.py --json qwen_edit/example_request.json --out qwen_edit/out.png
+python qwen_edit/test_api.py --json qwen_edit/example_request.json
+
+# (Optional) URL mode (may fail if the host blocks automated downloads)
+python qwen_edit/test_api.py --mode url --image-url "https://example.com/your-image.jpg"
 ```
 
 Optional: `TEST_IMAGE_URL` in `test.env` can be used instead of `--image-url`. See `qwen_edit/.env.example` for a template without personal data.
